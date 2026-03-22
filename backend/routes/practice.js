@@ -2,101 +2,96 @@ const express = require('express');
 const router = express.Router();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const auth = require('../middleware/authMiddleware');
-const Performance = require('../models/Performance'); // Move this to the top
+
+// Import your new models
+const Performance = require('../models/Performance');
+const Question = require('../models/Question');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 1. GENERAL TEST GENERATION
+// ---------------------------------------------------------
+// 1. GENERATE A GENERAL TEST
+// ---------------------------------------------------------
 router.post('/generate-test', auth, async (req, res) => {
     try {
         const { topic, difficulty, numQuestions } = req.body;
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `Generate ${numQuestions} multiple-choice questions on ${topic} at a ${difficulty} difficulty level. 
-        Format the response as a valid JSON array with fields: question, options (array), correctAnswer, and explanation.`;
+        Format the response as a valid JSON array with fields: questionText, options (array of 4 strings), correctAnswer, and explanation.`;
 
         const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        const cleanJson = text.replace(/```json|```/g, "");
-        res.json(JSON.parse(cleanJson));
+        const text = result.response.text().replace(/```json|```/g, "");
+        const questionsData = JSON.parse(text);
 
+        // Optional: Save these questions to MongoDB so we have IDs to reference later
+        const savedQuestions = await Question.insertMany(
+            questionsData.map(q => ({ ...q, subject: "B.Tech CSE", topic, difficulty }))
+        );
+
+        res.json(savedQuestions);
     } catch (error) {
-        res.status(500).json({ error: "Failed to generate questions" });
+        console.error("DETAILED AI ERROR:", error); // This will print the real error in VS Code
+    res.status(500).json({ 
+        error: "AI Generation failed", 
+        details: error.message 
+    });
     }
 });
 
-// backend/routes/practice.js
-
+// ---------------------------------------------------------
+// 2. SUBMIT ANSWERS (The "Adaptive" Logic)
+// ---------------------------------------------------------
 router.post('/submit-test', auth, async (req, res) => {
     try {
-        const { results } = req.body; // Expecting an array of { questionId, selectedOption, isCorrect, timeTaken }
+        const { results } = req.body; // Expecting [{ questionId, isCorrect, timeTaken }]
         const userId = req.user.id;
 
-        // 1. Save all performance records in bulk
-        const performanceRecords = results.map(result => ({
+        const performanceRecords = results.map(r => ({
             user: userId,
-            question: result.questionId,
-            isCorrect: result.isCorrect,
-            timeTaken: result.timeTaken
+            question: r.questionId,
+            isCorrect: r.isCorrect,
+            timeTaken: r.timeTaken
         }));
 
         await Performance.insertMany(performanceRecords);
 
-        // 2. Analyze for "Weak Areas" immediately
-        const weakAttempts = results.filter(r => !r.isCorrect);
-        const slowAttempts = results.filter(r => r.isCorrect && r.timeTaken > 60); // Over 60s is "slow"
-
-        res.json({
-            msg: "Test submitted successfully",
-            score: `${results.filter(r => r.isCorrect).length} / ${results.length}`,
-            analysis: {
-                weakCount: weakAttempts.length,
-                slowButCorrect: slowAttempts.length,
-                suggestion: weakAttempts.length > 0 
-                    ? "We've identified some gaps. Try a 'Targeted' session next." 
-                    : "Great job! Speed up your response time to master these topics."
-            }
-        });
-
+        res.json({ msg: "Performance tracked successfully!" });
     } catch (err) {
-        res.status(500).json({ error: "Failed to submit test results" });
+        res.status(500).json({ error: "Failed to save performance." });
     }
 });
 
-// 2. TARGETED GENERATION ROUTE (Adaptive Logic)
+// ---------------------------------------------------------
+// 3. TARGETED PRACTICE (The "Remedial" Logic)
+// ---------------------------------------------------------
 router.post('/generate-targeted', auth, async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Fetch user's mistakes
-        const history = await Performance.find({ user: userId, isCorrect: false })
+        // Find recent mistakes
+        const mistakes = await Performance.find({ user: userId, isCorrect: false })
             .populate('question')
             .sort({ attemptedAt: -1 })
             .limit(3);
 
-        if (history.length === 0) {
-            return res.json({ msg: "No weak areas found yet. Keep practicing!" });
+        if (mistakes.length === 0) {
+            return res.json({ msg: "No weak areas found! Try a general test first." });
         }
 
-        const weakTopics = history.map(h => h.question.topic).join(", ");
+        const weakTopics = [...new Set(mistakes.map(m => m.question.topic))].join(", ");
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const prompt = `The student is struggling with these topics: ${weakTopics}. 
-        Generate 3 targeted practice questions to help them bridge their gap. 
-        Format as a JSON array with: question, options, correctAnswer, and explanation.`;
+        const prompt = `The student is struggling with: ${weakTopics}. 
+        Generate 3 targeted questions to help them improve. Format as JSON.`;
 
         const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        const cleanJson = text.replace(/```json|```/g, "");
-
-        res.json(JSON.parse(cleanJson));
-
+        const text = result.response.text().replace(/```json|```/g, "");
+        
+        res.json(JSON.parse(text));
     } catch (err) {
-        res.status(500).json({ error: "Failed to generate targeted questions" });
+        res.status(500).json({ error: "Targeted generation failed." });
     }
 });
 
-// ALWAYS keep this at the very bottom of the file
 module.exports = router;
