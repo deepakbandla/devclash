@@ -1,0 +1,81 @@
+# DevClash Project Dependencies
+# 
+# This project is a Node.js application with a backend (Express.js + MongoDB) 
+# and a frontend (React + Vite).
+#
+# INSTALLATION INSTRUCTIONS:
+# 1. Ensure you have Node.js (v18 or higher) and npm installed
+# 2. Install backend dependencies: cd backend && npm install
+# 3. Install frontend dependencies: cd frontend && npm install
+#
+# ============================================================================
+# BACKEND DEPENDENCIES (backend/package.json)
+# ============================================================================
+# Express.js - Web framework for building the API
+express@^5.2.1
+
+# Mongoose - MongoDB object modeling and validation
+mongoose@^9.3.1
+
+# CORS - Middleware to enable Cross-Origin Resource Sharing
+cors@^2.8.6
+
+# dotenv - Load environment variables from .env file
+dotenv@^17.3.1
+
+# ============================================================================
+# FRONTEND DEPENDENCIES (frontend/package.json)
+# ============================================================================
+# React - UI library
+react@^19.2.4
+
+# ReactDOM - React rendering library for browsers
+react-dom@^19.2.4
+
+# React Router - Client-side routing
+react-router-dom@^7.13.1
+
+# Axios - HTTP client for making API requests
+axios@^1.13.6
+
+# Lucide React - Icon library
+lucide-react@^0.577.0
+
+# ============================================================================
+# FRONTEND DEV DEPENDENCIES (frontend/package.json)
+# ============================================================================
+# Vite - Fast build tool and development server
+vite@^8.0.1
+
+# Vite React Plugin - React support for Vite
+@vitejs/plugin-react@^6.0.1
+
+# ESLint - Code quality and linting tool
+eslint@^9.39.4
+
+# ESLint JavaScript plugin
+@eslint/js@^9.39.4
+
+# ESLint React Hooks plugin - Validates hooks usage
+eslint-plugin-react-hooks@^7.0.1
+
+# ESLint React Refresh plugin - Fast refresh support
+eslint-plugin-react-refresh@^0.5.2
+
+# TypeScript types for React
+@types/react@^19.2.14
+
+# TypeScript types for React DOM
+@types/react-dom@^19.2.3
+
+# Globals package - Global variable definitions
+globals@^17.4.0
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# - This is an npm/Node.js project, not Python
+# - Caret (^) versions allow minor and patch updates but not major versions
+# - For exact versions, use npm ci or update to exact version numbers
+# - MongoDB must be running locally or accessible via connection string in .env
+# - See backend/.env and frontend/.env files for environment configuration
