@@ -2,27 +2,29 @@
 const mongoose = require('mongoose');
 
 const PerformanceSchema = new mongoose.Schema({
-    user: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User', 
-        required: true 
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
-    question: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Question', 
-        required: true 
+    question: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Question',
+        required: true
     },
-    isCorrect: { 
-        type: Boolean, 
-        required: true 
+    isCorrect: {
+        type: Boolean,
+        required: true
     },
-    timeTaken: { 
-        type: Number, 
-        required: true // Time in seconds spent on the question
+    timeTaken: {
+        type: Number,
+        required: true,
+        min: 0,
+        max: 3600  // ✅ clamped at schema level too
     },
-    attemptedAt: { 
-        type: Date, 
-        default: Date.now 
+    attemptedAt: {
+        type: Date,
+        default: Date.now
     }
 });
 
