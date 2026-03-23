@@ -4,6 +4,8 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import Practice from './components/Practice'; // Ensure these are created
+import Results from './components/Results';
 
 function App() {
   return (
@@ -23,6 +25,24 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/practice"
+            element={
+              <ProtectedRoute>
+                <Practice />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/results"
+            element={
+              <ProtectedRoute>
+                <Results />
               </ProtectedRoute>
             }
           />
