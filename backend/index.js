@@ -1,14 +1,13 @@
 // backend/index.js
-const express = require('express');
 const dotenv = require('dotenv');
+dotenv.config(); // ✅ MUST be first before any other imports that use env vars
+
+const express = require('express');
 const connectDB = require('./db');
 const cors = require('cors');
 
-// Load env vars
-dotenv.config();
-
-// Connect to Database
-connectDB();
+const authRoutes = require('./routes/auth');
+const practiceRoutes = require('./routes/practice');
 
 const app = express();
 
@@ -16,18 +15,27 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/practice', practiceRoutes);
+
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+// Start server with DB connection
+const startServer = async () => {
+    try {
+        await connectDB();
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error(`❌ Failed to start server: ${error.message}`);
+        process.exit(1);
+    }
+};
 
-// Add this near your other imports
-const authRoutes = require('./routes/auth');
-
-// Add this after your app.use(express.json())
-app.use('/api/auth', authRoutes);
+startServer();
